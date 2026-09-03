@@ -13,10 +13,17 @@ while [ -L "$SOURCE" ]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-BRIDGE="${ROOT}/bridge/fusion_mcp_bridge.py"
+BRIDGE=""
+for c in \
+  "${GROK_FUSION_LIBEXEC:-}/bridge/fusion_mcp_bridge.py" \
+  "${ROOT}/bridge/fusion_mcp_bridge.py" \
+  "${ROOT}/libexec/bridge/fusion_mcp_bridge.py"
+do
+  [[ -n "$c" && -f "$c" ]] && BRIDGE="$c" && break
+done
 
-if [[ ! -f "$BRIDGE" ]]; then
-  echo "missing $BRIDGE"
+if [[ -z "$BRIDGE" ]]; then
+  echo "missing fusion_mcp_bridge.py (set GROK_FUSION_LIBEXEC)"
   exit 1
 fi
 

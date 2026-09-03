@@ -1,72 +1,53 @@
-# Grok Fusion MCP Connector (Claude-compatible)
+# Grok Fusion MCP Connector
 
-[![Release](https://img.shields.io/github/v/release/MJVasya/grok-fusion-connector)](https://github.com/MJVasya/grok-fusion-connector/releases)
-[![License](https://img.shields.io/github/license/MJVasya/grok-fusion-connector)](LICENSE)
+Talks to **Autodesk’s official local Fusion MCP** (`MCP Server Adapter 1.0.0` at `http://127.0.0.1:27182/mcp`). No extra Fusion add-in is required.
 
-Fusion MCP connector pack for Grok, modeled after the Claude Fusion connector.
+## Official tools
 
-- Autodesk Fusion MCP server (HTTP, default `http://127.0.0.1:27182/mcp`)
-- Fusion add-in `FusionMCPBridge` helpers:
-  - `fusion_mcp_execute`
-  - `fusion_mcp_screenshot`
-- Grok MCP manifest + CLI installer
-- Homebrew tap: [`mjvasya/homebrew-grok`](https://github.com/MJVasya/homebrew-grok)
+| Tool | Use |
+|---|---|
+| `fusion_mcp_read` | projects, document search, screenshot, API docs, activeCommand |
+| `fusion_mcp_execute` | `featureType: script` (must define `def run(_context):`) or document open/close/save |
+| `fusion_mcp_update` | undo / redo |
+| `fusion_mcp_electronics_read` | electronics design read |
 
-The HTTP MCP endpoint is **hosted by Fusion**, not by this repo. Enable it in Fusion before connecting Grok.
+Transport: Streamable HTTP. After `initialize`, every request needs header `Mcp-Session-Id`.
 
-## Install via Homebrew
+## Install (Mac mini)
 
-```bash
-brew tap mjvasya/grok
-brew install grok-fusion-connector
-install-grok-fusion.sh
-```
-
-## Manual install (macOS)
-
-1. Copy `fusion-addin/FusionMCPBridge` to:
-
-   ```bash
-   ~/Library/Application\\ Support/Autodesk/Autodesk\\ Fusion/API/AddIns/
-   ```
-
-2. Enable the add-in in Fusion (Utilities → Scripts and Add-Ins).
-3. Enable Fusion MCP Server:
-
-   Fusion → Preferences → General → API → **Fusion MCP Server (runs locally on this device)**
-
-   Default URL: `http://127.0.0.1:27182/mcp`
-
-4. Run:
-
-   ```bash
-   bash installers/install-grok-fusion.sh
-   ```
-
-## Usage
-
-From Grok / the Python client:
+Fusion running + Preferences → General → API → Fusion MCP Server.
 
 ```bash
-python3 mcp-client/fusion_mcp_client.py list-tools
+git clone https://github.com/MJVasya/grok-fusion-connector.git
+cd grok-fusion-connector
+python3 mcp-client/fusion_mcp_client.py probe
+bash installers/install-grok-fusion.sh
 ```
 
-- `fusion_mcp_execute`
+Register local Grok CLI / Grok Build:
 
-  ```json
-  { "script": "import adsk.core\napp = adsk.core.Application.get(); print(app.version)" }
-  ```
+```bash
+grok mcp add --transport http fusion360 http://127.0.0.1:27182/mcp
+grok mcp doctor fusion360
+```
 
-- `fusion_mcp_screenshot`
+## grok.com (cloud)
 
-  ```json
-  { "width": 1280, "height": 720 }
-  ```
+Grok rejects `127.0.0.1`. Tunnel Streamable HTTP:
 
-Fusion must be running with MCP enabled or the client will get connection refused.
+```bash
+cloudflared tunnel --url http://127.0.0.1:27182
+```
 
-## Release / Homebrew SHA
+Then grok.com/connectors → New Connector → Custom → `https://<tunnel>/mcp`
 
-1. Tag `vX.Y.Z` and push the tag (creates the GitHub archive Homebrew uses).
-2. Run workflow **Update Homebrew SHA** with that tag.
-3. Paste the printed `sha256` into `Formula/grok-fusion-connector.rb` in `homebrew-grok`.
+Cloudflare quick tunnels do not support legacy SSE. Fusion uses Streamable HTTP, so Cloudflare is OK.
+
+## Probe a script
+
+```bash
+python3 mcp-client/fusion_mcp_client.py exec 'import adsk.core
+def run(_c):
+    print(adsk.core.Application.get().version)
+'
+```

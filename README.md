@@ -21,7 +21,9 @@ Official docs:
 
 Transport: Streamable HTTP. After `initialize`, every request needs `Mcp-Session-Id`. API lengths are **cm**.
 
-## Install
+Full install / update / remove / kill-PID: [docs/INSTALL.md](docs/INSTALL.md).
+
+## New install
 
 Fusion running + Preferences → General → API → Fusion MCP Server.
 
@@ -31,36 +33,36 @@ brew install --HEAD mjvasya/grok/grok-fusion-connector
 install-grok-fusion.sh
 ```
 
-Or clone this repo and run `python3 mcp-client/fusion_mcp_client.py probe`.
-
-## Run
+## Run (prints Grok URL + PIDs)
 
 ```bash
-start-fusion-grok-bridge          # http://127.0.0.1:18782/mcp → Fusion :27182
+bash installers/start-fusion-grok-stack.sh
 ```
 
-Local Grok CLI:
+## Kill PIDs
 
 ```bash
-grok mcp add --transport http fusion360 http://127.0.0.1:18782/mcp
+bash installers/stop-fusion-grok-stack.sh
+# or:
+kill "$(cat ~/.grok/fusion-stack/bridge.pid)"
+kill "$(cat ~/.grok/fusion-stack/cloudflared.pid)"
 ```
 
-## grok.com via Cloudflare Tunnel (verified)
-
-Do **not** point the tunnel at `:27182` (Fusion rejects public `Host`). Point it at the **bridge**.
+## Update
 
 ```bash
-start-fusion-grok-bridge
-cloudflared tunnel --url http://127.0.0.1:18782
+bash installers/stop-fusion-grok-stack.sh
+brew upgrade --fetch-HEAD mjvasya/grok/grok-fusion-connector
+# or: brew reinstall --HEAD --fetch-HEAD mjvasya/grok/grok-fusion-connector
 ```
 
-Custom connector URL: `https://<name>.trycloudflare.com/mcp`
+## Remove
 
-Verified working with Grok Custom Connector + Cloudflare quick tunnel when:
+```bash
+bash installers/stop-fusion-grok-stack.sh
+brew uninstall grok-fusion-connector
+brew untap mjvasya/grok
+rm -rf ~/.grok/fusion-stack ~/.grok/mcp/fusion
+```
 
-- Fusion MCP is on
-- bridge is listening on `:18782`
-- cloudflared targets the bridge
-- connector URL ends in `/mcp`
-
-Grok catalog **Fusion360** connector is the same four tools without a tunnel.
+Tunnel the **bridge** (`:18782`), not Fusion (`:27182`). Connector URL must end in `/mcp`. Grok catalog **Fusion360** is the same four tools without a tunnel.

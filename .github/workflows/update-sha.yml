@@ -1,0 +1,33 @@
+name: Update Homebrew SHA
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  update-sha:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout connector repo
+        uses: actions/checkout@v4
+
+      - name: Compute SHA256 of GitHub tag archive
+        run: |
+          TAG="${{ inputs.tag }}"
+          URL="https://github.com/MJVasya/grok-fusion-connector/archive/refs/tags/${TAG}.tar.gz"
+          echo "Downloading ${URL}"
+          curl -fsSL "$URL" -o connector.tar.gz
+          SHA256=$(sha256sum connector.tar.gz | awk '{print $1}')
+          echo "SHA256=${SHA256}" >> "$GITHUB_ENV"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "SHA256=${SHA256}"
+
+      - name: Print brew formula snippet
+        run: |
+          echo "url \"https://github.com/MJVasya/grok-fusion-connector/archive/refs/tags/${TAG}.tar.gz\""
+          echo "sha256 \"${SHA256}\""

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "Do not use sudo. Run as your login user so files land in ~/.grok"
+  exit 1
+fi
+
 URL="${FUSION_MCP_URL:-http://127.0.0.1:27182/mcp}"
 CONNECTOR_DIR="${HOME}/.grok/mcp/fusion"
 mkdir -p "$CONNECTOR_DIR"
@@ -19,10 +24,11 @@ ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 CLIENT=""
 for c in \
+  "${GROK_FUSION_LIBEXEC:-}/mcp-client/fusion_mcp_client.py" \
   "${ROOT}/mcp-client/fusion_mcp_client.py" \
   "${ROOT}/libexec/mcp-client/fusion_mcp_client.py"
 do
-  [[ -f "$c" ]] && CLIENT="$c" && break
+  [[ -n "$c" && -f "$c" ]] && CLIENT="$c" && break
 done
 
 if [[ -z "$CLIENT" ]]; then
@@ -34,7 +40,13 @@ cp "$CLIENT" "${CONNECTOR_DIR}/fusion_mcp_client.py"
 
 echo
 echo "== Probe Fusion MCP =="
-python3 "$CLIENT" probe | tee "${CONNECTOR_DIR}/last-probe.json"
+if python3 "$CLIENT" probe >"${CONNECTOR_DIR}/last-probe.json" 2>"${CONNECTOR_DIR}/last-probe.err"; then
+  echo "Fusion MCP reachable."
+else
+  echo "WARN: Fusion MCP not answering (${URL})."
+  echo "      Start Fusion and enable Preferences → General → API → Fusion MCP Server."
+  echo "      Installer continues."
+fi
 
 cat > "${CONNECTOR_DIR}/manifest.json" << EOF
 {
@@ -55,20 +67,9 @@ else
 fi
 
 if command -v grok >/dev/null 2>&1; then
-  echo
-  echo "== Register Grok CLI =="
-  grok mcp add --transport http fusion360 "$URL" || true
-  grok mcp list || true
-  grok mcp doctor fusion360 || true
-else
-  echo
-  echo "grok CLI not on PATH."
-  echo "Local:  grok mcp add --transport http fusion360 $URL"
-  echo "grok.com rejects 127.0.0.1. Tunnel:"
-  echo "  cloudflared tunnel --url http://127.0.0.1:27182"
-  echo "  Then grok.com/connectors → Custom → https://YOUR-TUNNEL/mcp"
+  grok mcp add --transport http fusion360 "$URL" >/dev/null 2>&1 || true
 fi
 
 echo
-echo "Done. Keep Fusion running."
-echo "Scripts must define: def run(_context):"
+echo "Next: start-fusion-grok-stack   # prints GROK_CONNECTOR_URL"
+echo "Stop: stop-fusion-grok-stack"

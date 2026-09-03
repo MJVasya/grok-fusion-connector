@@ -3,6 +3,11 @@
 # Prints GROK_CONNECTOR_URL = https://<trycloudflare-host>/mcp
 set -euo pipefail
 
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "Do not use sudo. Run as your login user."
+  exit 1
+fi
+
 LISTEN="${BRIDGE_LISTEN:-127.0.0.1}"
 PORT="${BRIDGE_PORT:-18782}"
 UPSTREAM="${FUSION_MCP_UPSTREAM:-http://127.0.0.1:27182}"
@@ -52,7 +57,7 @@ extract_url() {
 }
 
 BRIDGE="$(resolve_bridge)" || {
-  echo "missing fusion_mcp_bridge.py (brew reinstall --HEAD or set GROK_FUSION_LIBEXEC)"
+  echo "missing fusion_mcp_bridge.py"
   exit 1
 }
 command -v cloudflared >/dev/null || {
@@ -89,17 +94,12 @@ done
 
 if [[ -z "$URL" ]]; then
   echo "FAIL: no trycloudflare host in $LOG"
-  tail -n 40 "$LOG"
+  tail -n 20 "$LOG"
   exit 1
 fi
 
 printf '%s\n' "$URL" > "$URL_FILE"
 printf 'GROK_CONNECTOR_URL=%s\n' "$URL"
 echo "$URL" | pbcopy 2>/dev/null || true
-echo
-echo "Paste into grok.com/connectors → Custom → MCP URL"
-echo "  $URL"
-echo
+echo "Stop: stop-fusion-grok-stack"
 echo "PIDs: bridge=$(cat "$PID_BRIDGE") cloudflared=$(cat "$PID_CF")"
-echo "Stop: kill \$(cat $PID_BRIDGE $PID_CF); rm -f $PID_BRIDGE $PID_CF"
-echo "Logs: $LOG"

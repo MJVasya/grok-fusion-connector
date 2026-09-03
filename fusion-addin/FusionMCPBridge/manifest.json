@@ -1,0 +1,15 @@
+{
+  "autodeskProduct": "Fusion",
+  "type": "addin",
+  "id": "FusionMCPBridge",
+  "name": "Fusion MCP Bridge for Grok",
+  "description": {
+    "": "Exposes Fusion helpers (execute, screenshot) used with the Grok Fusion MCP connector."
+  },
+  "author": "Pasha",
+  "version": "1.0.0",
+  "supportedOS": "windows|mac",
+  "product": ["Fusion360"],
+  "runOnStartup": true,
+  "editEnabled": true
+}

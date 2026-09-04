@@ -33,16 +33,29 @@ brew install --HEAD mjvasya/grok/grok-fusion-connector
 install-grok-fusion.sh
 ```
 
+## After install (daily)
+
+Do **not** rerun `install-grok-fusion.sh`. Each session:
+
+1. Fusion open, Preferences → General → API → Fusion MCP Server.
+2. `start-fusion-grok-stack` (no sudo) — prints `GROK_CONNECTOR_URL`.
+3. grok.com Custom connector: paste that URL (quick-tunnel host changes every start).
+4. Done: `stop-fusion-grok-stack`.
+
+Grok catalog **Fusion360** in chat does not need the stack — only Fusion + MCP.
+
 ## Run (prints Grok URL + PIDs)
 
 ```bash
+start-fusion-grok-stack
+# or from a clone:
 bash installers/start-fusion-grok-stack.sh
 ```
 
 ## Kill PIDs
 
 ```bash
-bash installers/stop-fusion-grok-stack.sh
+stop-fusion-grok-stack
 # or:
 kill "$(cat ~/.grok/fusion-stack/bridge.pid)"
 kill "$(cat ~/.grok/fusion-stack/cloudflared.pid)"
@@ -51,18 +64,17 @@ kill "$(cat ~/.grok/fusion-stack/cloudflared.pid)"
 ## Update
 
 ```bash
-bash installers/stop-fusion-grok-stack.sh
-brew upgrade --fetch-HEAD mjvasya/grok/grok-fusion-connector
-# or: brew reinstall --HEAD --fetch-HEAD mjvasya/grok/grok-fusion-connector
+stop-fusion-grok-stack
+brew reinstall --fetch-HEAD mjvasya/grok/grok-fusion-connector
 ```
 
 ## Remove
 
 ```bash
-bash installers/stop-fusion-grok-stack.sh
+stop-fusion-grok-stack
 brew uninstall grok-fusion-connector
 brew untap mjvasya/grok
 rm -rf ~/.grok/fusion-stack ~/.grok/mcp/fusion
 ```
 
-Tunnel the **bridge** (`:18782`), not Fusion (`:27182`). Connector URL must end in `/mcp`. Grok catalog **Fusion360** is the same four tools without a tunnel.
+Tunnel the **bridge** (`:18782`), not Fusion (`:27182`). Connector URL must end in `/mcp`.

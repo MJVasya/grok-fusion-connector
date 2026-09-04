@@ -12,12 +12,23 @@ brew install --HEAD mjvasya/grok/grok-fusion-connector
 install-grok-fusion.sh
 ```
 
-`--HEAD` is required. `brew update` alone does **not** refresh HEAD source.
+`--HEAD` is required on **install**. `brew reinstall` does **not** take `--HEAD`. Refresh with `brew reinstall --fetch-HEAD mjvasya/grok/grok-fusion-connector`. Never use `sudo` on these commands.
+
+## After install (daily)
+
+Do **not** rerun `install-grok-fusion.sh`. Each session:
+
+1. Fusion open, Preferences → General → API → Fusion MCP Server.
+2. `start-fusion-grok-stack` (no sudo) — starts the hidden bridge + Cloudflare tunnel and prints `GROK_CONNECTOR_URL`.
+3. If you use a grok.com **Custom** connector, paste that URL. The trycloudflare hostname changes every start.
+4. When done: `stop-fusion-grok-stack`.
+
+The Grok catalog **Fusion360** connector does **not** need this stack — only Fusion with MCP enabled.
 
 ## Run (hidden stack + Grok URL)
 
 ```bash
-bash "$(brew --prefix)/opt/grok-fusion-connector/libexec/installers/start-fusion-grok-stack.sh"
+start-fusion-grok-stack
 ```
 
 From a git clone:
@@ -30,7 +41,6 @@ Prints:
 
 ```
 GROK_CONNECTOR_URL=https://<name>.trycloudflare.com/mcp
-PIDs: bridge=<PID> cloudflared=<PID>
 ```
 
 Paste that URL into grok.com/connectors → Custom. Hostname changes every launch.
@@ -39,10 +49,8 @@ State files: `~/.grok/fusion-stack/` (`bridge.pid`, `cloudflared.pid`, `cloudfla
 
 ## Kill PIDs
 
-Preferred:
-
 ```bash
-bash installers/stop-fusion-grok-stack.sh
+stop-fusion-grok-stack
 ```
 
 Manual:
@@ -50,29 +58,15 @@ Manual:
 ```bash
 kill "$(cat ~/.grok/fusion-stack/bridge.pid)"
 kill "$(cat ~/.grok/fusion-stack/cloudflared.pid)"
-rm -f ~/.grok/fusion-stack/bridge.pid ~/.grok/fusion-stack/cloudflared.pid
-```
-
-If a terminal is still in the foreground:
-
-```bash
-# Ctrl-C in that window, or:
-lsof -nP -iTCP:18782 -sTCP:LISTEN
-kill <PID>
-pgrep -lf cloudflared
-kill <PID>
 ```
 
 ## Update
 
 ```bash
-bash installers/stop-fusion-grok-stack.sh
+stop-fusion-grok-stack
 brew update
-brew upgrade --fetch-HEAD mjvasya/grok/grok-fusion-connector
-# if brew says already installed:
-brew reinstall --HEAD --fetch-HEAD mjvasya/grok/grok-fusion-connector
-install-grok-fusion.sh
-bash "$(brew --prefix)/opt/grok-fusion-connector/libexec/installers/start-fusion-grok-stack.sh"
+brew reinstall --fetch-HEAD mjvasya/grok/grok-fusion-connector
+start-fusion-grok-stack
 ```
 
 Then replace the Custom connector URL (quick tunnel host is new).
@@ -80,7 +74,7 @@ Then replace the Custom connector URL (quick tunnel host is new).
 ## Remove
 
 ```bash
-bash installers/stop-fusion-grok-stack.sh
+stop-fusion-grok-stack
 brew uninstall grok-fusion-connector
 brew untap mjvasya/grok
 rm -rf ~/.grok/fusion-stack ~/.grok/mcp/fusion
